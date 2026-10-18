@@ -39,15 +39,25 @@ harvest-playground/
 │   ├── distill.py             # diverse-coverage sampler
 │   ├── synth_eval.py          # boundary/edge-case eval sampler
 │   └── extraction_probe.py    # repetition + perturbation probes (red-team your own model)
+├── playground/                # interactive UI (Gradio) + the logic behind it
+│   ├── app.py                 # five tabs; handlers are plain functions
+│   ├── mmlu.py / scorers.py / benchmark.py   # MMLU loading, A-D scoring, comparison
+│   ├── capture_studio.py      # preview / capture / browse / verify batches
+│   ├── arena.py               # blind side-by-side votes, win rates, Elo
+│   ├── coverage_view.py       # CSV traffic logs -> coverage + drift
+│   └── charts.py
 ├── config/
-│   └── example_targets.yaml
+│   ├── example_targets.yaml
+│   ├── reference_scores.json  # published MMLU scores to compare against
+│   └── topics/                # topic sets for --topics @file
+├── tests/                     # pytest suite (runs offline)
 └── cli.py
 ```
 
 ## Quickstart
 
 ```bash
-pip install transformers torch httpx pynacl
+pip install -r requirements.txt
 
 # Distillation-style capture from a local checkpoint
 python cli.py distill --model ./llama-3.1-8b-instruct \
@@ -68,6 +78,50 @@ python cli.py syntheval --backend openai_compat \
 # Verify a capture batch's signature
 python cli.py verify --batch-file ./captures/batch_1712345678000.json
 ```
+
+## Interactive UI
+
+```bash
+python cli.py ui            # http://127.0.0.1:7860
+```
+
+Every tab takes a backend: `hf_local` (a checkpoint path or Hugging Face
+name), `openai_compat` (a server you host), or `mock`, which runs the UI
+with no model at all and labels its output as fake.
+
+| Tab | What it does |
+|---|---|
+| **Benchmark** | Runs MMLU (5-shot, next-token scoring like the reference eval) on your model, per subject and per category, and charts it against `config/reference_scores.json`: the MMLU leaderboard plus vendor-reported flagship scores, each tagged with its prompting setup. **Download MMLU** fetches the questions from a GitHub mirror into `data/mmlu/`. |
+| **Capture studio** | Pick a strategy and topic set, preview prompts, run a signed capture, then browse batches; each batch's signature is checked when it is listed or opened. |
+| **Arena** | Two open models answer the same prompt with sides hidden; vote, then see which was which. Standings (win rate, Elo) and per-topic win rates come from `runs/arena_votes.jsonl`. Arena outputs are never written to capture batches. |
+| **Coverage** | Upload a CSV traffic log (`input_text`, `resolved`, optional `confidence`, `timestamp`, `cluster`) or use demo traffic: coverage per cluster plus drift between the first and second half of the log. |
+| **Economics** | Sliders over `core/economics.py` (break-even vs. a flagship API) and `core/production_loop.py` (cumulative cost per policy). |
+
+Flagship models are compared through their **published** scores rather
+than queried. Querying a closed API would need an adapter this toolkit
+deliberately doesn't ship (see "Scope, on purpose"), and published scores
+are how labs report these comparisons anyway. Only the 5-shot vendor rows
+are like-for-like with the default run; the setting column says which.
+
+The benchmark also runs headless:
+
+```bash
+python cli.py fetch-mmlu                          # all 57 subjects, ~6.5 MB
+python cli.py benchmark --model ./my-model --n-per-subject 20
+```
+
+Screenshots from a run with a tiny randomly-initialised model (so it
+scores at chance, 24.4% on 570 questions) are in `docs/screenshots/`.
+
+## Tests
+
+```bash
+python -m pytest
+```
+
+The suite runs offline: MMLU is replaced by a small fixture in the same
+file format, and the one test that needs a real model builds a ~200K
+parameter random GPT-2 on the fly.
 
 ## Customizing: writing your own strategy
 
