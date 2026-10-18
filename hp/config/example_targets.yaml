@@ -1,0 +1,27 @@
+# Example target definitions. This file is documentation/reference —
+# the CLI currently takes target params as flags, but if you build a
+# batch-runner on top of this playground, this is a reasonable shape
+# for a config-driven target list.
+
+targets:
+  - name: local-llama-3.1-8b
+    backend: hf_local
+    model: ./models/llama-3.1-8b-instruct
+    license_tag: llama-3.1-community-license
+    notes: >
+      Meta's Llama Community License permits fine-tuning and derivative
+      use; check current terms for any output-use restrictions before
+      running distillation captures at scale.
+
+  - name: local-qwen2.5-coder-32b
+    backend: hf_local
+    model: ./models/qwen2.5-coder-32b
+    license_tag: apache-2.0
+    notes: Apache-2.0 — no output-use restrictions.
+
+  - name: self-hosted-vllm-mistral
+    backend: openai_compat
+    base_url: http://localhost:8000
+    model_id: mistral-7b-instruct
+    license_tag: apache-2.0
+    notes: Self-hosted vLLM server, OpenAI-compatible schema.
