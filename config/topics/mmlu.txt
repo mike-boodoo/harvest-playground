@@ -1,0 +1,61 @@
+# The 57 MMLU subjects (Hendrycks et al., "Measuring Massive Multitask Language
+# Understanding"), from https://github.com/hendrycks/test/blob/master/categories.py
+# MIT License, Copyright (c) 2020 Dan Hendrycks. One topic per line; use with
+# --topics @config/topics/mmlu.txt
+abstract algebra
+anatomy
+astronomy
+business ethics
+clinical knowledge
+college biology
+college chemistry
+college computer science
+college mathematics
+college medicine
+college physics
+computer security
+conceptual physics
+econometrics
+electrical engineering
+elementary mathematics
+formal logic
+global facts
+high school biology
+high school chemistry
+high school computer science
+high school european history
+high school geography
+high school government and politics
+high school macroeconomics
+high school mathematics
+high school microeconomics
+high school physics
+high school psychology
+high school statistics
+high school us history
+high school world history
+human aging
+human sexuality
+international law
+jurisprudence
+logical fallacies
+machine learning
+management
+marketing
+medical genetics
+miscellaneous
+moral disputes
+moral scenarios
+nutrition
+philosophy
+prehistory
+professional accounting
+professional law
+professional medicine
+professional psychology
+public relations
+security studies
+sociology
+us foreign policy
+virology
+world religions

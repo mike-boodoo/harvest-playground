@@ -53,6 +53,10 @@ pip install transformers torch httpx pynacl
 python cli.py distill --model ./llama-3.1-8b-instruct \
     --topics math,coding,writing --n 100
 
+# Same, stratified over the 57 MMLU subjects (config/topics/mmlu.txt)
+python cli.py distill --model ./llama-3.1-8b-instruct \
+    --topics @config/topics/mmlu.txt --n 100
+
 # Synthetic eval generation against a self-hosted vLLM server
 python cli.py syntheval --backend openai_compat \
     --base-url http://localhost:8000 --model-id my-finetune \

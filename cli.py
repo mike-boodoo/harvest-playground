@@ -51,9 +51,17 @@ def get_or_create_signer(key_path: str) -> ProvenanceSigner:
     return signer
 
 
+def parse_topics(spec: str) -> list[str]:
+    """Comma-separated topics, or `@path` to a file with one topic per line (# comments allowed)."""
+    if spec.startswith("@"):
+        lines = Path(spec[1:]).read_text().splitlines()
+        return [l.strip() for l in lines if l.strip() and not l.lstrip().startswith("#")]
+    return spec.split(",")
+
+
 def cmd_distill(args):
     target = build_target(args)
-    strategy = DistillationSampler(topics=args.topics.split(","))
+    strategy = DistillationSampler(topics=parse_topics(args.topics))
     signer = get_or_create_signer(args.key_file)
     record = run_capture(target, strategy, args.n, signer, out_dir=args.out_dir)
     print(f"[+] Captured {args.n} samples from {target.model_id}")
@@ -62,7 +70,7 @@ def cmd_distill(args):
 
 def cmd_syntheval(args):
     target = build_target(args)
-    strategy = SynthEvalSampler(topics=args.topics.split(","))
+    strategy = SynthEvalSampler(topics=parse_topics(args.topics))
     signer = get_or_create_signer(args.key_file)
     record = run_capture(target, strategy, args.n, signer, out_dir=args.out_dir)
     print(f"[+] Captured {args.n} eval samples from {target.model_id}")
@@ -92,12 +100,12 @@ def main():
 
     p_distill = sub.add_parser("distill", help="Diverse-coverage capture for distillation datasets")
     add_common(p_distill)
-    p_distill.add_argument("--topics", required=True, help="Comma-separated topic list")
+    p_distill.add_argument("--topics", required=True, help="Comma-separated topic list, or @file (one per line)")
     p_distill.set_defaults(func=cmd_distill)
 
     p_eval = sub.add_parser("syntheval", help="Synthetic eval-set generation")
     add_common(p_eval)
-    p_eval.add_argument("--topics", required=True, help="Comma-separated topic list")
+    p_eval.add_argument("--topics", required=True, help="Comma-separated topic list, or @file (one per line)")
     p_eval.set_defaults(func=cmd_syntheval)
 
     p_verify = sub.add_parser("verify", help="Verify a signed capture batch")
