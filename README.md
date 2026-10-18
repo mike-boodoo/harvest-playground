@@ -33,7 +33,10 @@ harvest-playground/
 │   ├── target.py       # backend adapters (HF local, OpenAI-compat local)
 │   ├── capture.py       # orchestrates strategy -> target -> signed batch
 │   ├── provenance.py    # ed25519 signing/verification of capture batches
-│   └── coverage.py      # coverage metering: manual-input replacement tracking + drift detection
+│   ├── coverage.py      # coverage metering: manual-input replacement tracking + drift detection
+│   ├── topic_graph.py   # topic overlap graph: exhaustive exploration, visibility policy
+│   ├── session_flow.py  # per-user session: pools, ownership, takeaway model
+│   └── peer_benchmark.py # peer-judged arena + EigenTrust, anchored on moderators
 ├── strategies/
 │   ├── base.py               # SamplingStrategy interface — extend this
 │   ├── distill.py             # diverse-coverage sampler
@@ -188,6 +191,36 @@ Default clustering is a lightweight keyword matcher — pass `cluster_fn`
 to plug in embedding-based clustering if you need something finer
 grained. See `examples/coverage_demo.py` for a full synthetic run,
 including a simulated feature-launch drift scenario.
+
+## Topic graph sessions: degrees of separation, takeaways, peer benchmark
+
+`examples/degrees_of_separation_demo.py` simulates one user flow per
+person in a small community of #topics (the OQOS connector's model of
+topics, curators and overlap):
+
+1. **Explore** (`core/topic_graph.py`): breadth-first through shared
+   topics until nothing new can be reached. Everyone in one connected
+   component ends up reaching the same people and topics, so access is
+   equal and only distance differs.
+2. **Show** (`visible_view`): per-topic pseudonyms for people on your own
+   topics, counts only beyond that, and topic names hidden when fewer
+   than `k` people are on them.
+3. **Take away** (`core/session_flow.py`): each user's model learns from
+   every topic agent in reach, discounted per hop. Their stake in each
+   topic agent comes from `valuation.arrival_order_values` (priority:
+   the moderator, i.e. the first arrival, gets the largest share) or
+   `valuation.shapley_values` (order-free).
+4. **Benchmark** (`core/peer_benchmark.py`): members' models judge each
+   other in a peer arena, and EigenTrust turns the verdicts into global
+   trust, with moderators as the pre-trusted anchor. The demo compares it
+   with an unanchored run and a naive win rate when two models collude.
+
+```bash
+python examples/degrees_of_separation_demo.py
+```
+
+Models are simulated (a hidden skill per topic); batches are really
+signed, with a separate key per user per topic, and pooled.
 
 ## Extending backends
 
