@@ -88,12 +88,9 @@ class TopicGraph:
     def membership(self, user: str, topic: str) -> Membership:
         return next(m for m in self._by_topic[topic] if m.user == user)
 
-    def moderator(self, topic: str) -> str:
-        """First to arrive on a topic."""
+    def first_arrival(self, topic: str) -> str:
+        """First to arrive on a topic. A fact about timing, not a role: nobody is designated."""
         return self._by_topic[topic][0].user
-
-    def moderated_by(self, user: str) -> list[str]:
-        return [t for t in self.topics() if self.moderator(t) == user]
 
     def explore(self, ego: str) -> Exploration:
         user_degree = {ego: 0}

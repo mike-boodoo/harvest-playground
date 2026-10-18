@@ -36,7 +36,7 @@ harvest-playground/
 │   ├── coverage.py      # coverage metering: manual-input replacement tracking + drift detection
 │   ├── topic_graph.py   # topic overlap graph: exhaustive exploration, visibility policy
 │   ├── session_flow.py  # per-user session: pools, ownership, takeaway model
-│   └── peer_benchmark.py # peer-judged arena + EigenTrust, anchored on moderators
+│   └── peer_benchmark.py # peer-judged arena, EigenTrust, emergent top-k picks
 ├── strategies/
 │   ├── base.py               # SamplingStrategy interface — extend this
 │   ├── distill.py             # diverse-coverage sampler
@@ -205,15 +205,20 @@ topics, curators and overlap):
 2. **Show** (`visible_view`): per-topic pseudonyms for people on your own
    topics, counts only beyond that, and topic names hidden when fewer
    than `k` people are on them.
-3. **Take away** (`core/session_flow.py`): each user's model learns from
+3. **Pick** (`core/peer_benchmark.py`): members' models judge each
+   other in a peer arena. Nobody is designated a moderator. Starting
+   from no anchor, EigenTrust scores every model, each topic agent picks
+   its top-k members by their trust on that topic, the picks become the
+   anchor, and this repeats until the picks stop changing. The picks
+   are moderators in effect only: they anchor the benchmark, shape the
+   agent and own it, and are never labeled.
+4. **Take away** (`core/session_flow.py`): each user's model learns from
    every topic agent in reach, discounted per hop. Their stake in each
-   topic agent comes from `valuation.arrival_order_values` (priority:
-   the moderator, i.e. the first arrival, gets the largest share) or
-   `valuation.shapley_values` (order-free).
-4. **Benchmark** (`core/peer_benchmark.py`): members' models judge each
-   other in a peer arena, and EigenTrust turns the verdicts into global
-   trust, with moderators as the pre-trusted anchor. The demo compares it
-   with an unanchored run and a naive win rate when two models collude.
+   topic agent follows the agent's picks; `valuation.arrival_order_values`
+   (first arrival gets the most) and `valuation.shapley_values`
+   (order-free) are shown for comparison.
+5. **Infer** (`infer_top_k`): how many shared prompts a member needs to
+   work out the agent's picks from its answers alone.
 
 ```bash
 python examples/degrees_of_separation_demo.py

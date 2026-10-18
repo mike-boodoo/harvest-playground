@@ -18,9 +18,12 @@ networks with no central authority) resolves that loop:
      colluding ring can vouch for itself; with it, trust has to flow in
      from somewhere already trusted.
 
-Here the pre-trusted peers are topic moderators (first arrivals). That is
-the second reason moderators matter: they anchor the benchmark as well as
-owning the largest share of the topic agent.
+Nobody is designated as pre-trusted here. `emergent_selection` starts
+with no anchor, lets each topic agent pick the top-k members' models it
+will aggregate, uses those picks as the anchor, and repeats until the
+picks stop changing. The picked members are moderators in effect only:
+no label is ever assigned, but the role (anchoring the benchmark and
+shaping the topic agent) is real, and members can infer it.
 
 Each power iteration pushes trust one judging hop further, so the number
 of iterations before every reachable model has nonzero trust is a
@@ -87,7 +90,7 @@ def peer_judgments(
 def eigentrust(
     users: list[str],
     judgments: list[Judgment],
-    pretrusted: list[str] | None = None,
+    pretrusted: list[str] | dict[str, float] | None = None,
     alpha: float = 0.15,
     tol: float = 1e-10,
     max_iter: int = 500,
@@ -96,15 +99,20 @@ def eigentrust(
     Returns (global trust per user, iterations to converge, iterations
     until the set of users with any trust stops growing, i.e. how many
     judging hops trust had to travel from the anchors).
-    `pretrusted=None` spreads p uniformly, i.e. no anchor.
+    `pretrusted=None` spreads p uniformly, i.e. no anchor; a dict spreads
+    it in proportion to the given weights (a prior from somewhere else).
     """
     sat: dict[str, dict[str, float]] = defaultdict(lambda: defaultdict(float))
     for j in judgments:
         sat[j.judge][j.winner] += 1
         sat[j.judge][j.loser] -= 1
 
-    anchors = pretrusted or users
-    p = {u: (1 / len(anchors) if u in anchors else 0.0) for u in users}
+    if isinstance(pretrusted, dict) and sum(pretrusted.get(u, 0.0) for u in users) > 0:
+        total = sum(pretrusted.get(u, 0.0) for u in users)
+        p = {u: pretrusted.get(u, 0.0) / total for u in users}
+    else:
+        anchors = pretrusted or users
+        p = {u: (1 / len(anchors) if u in anchors else 0.0) for u in users}
     local: dict[str, dict[str, float]] = {}
     for i in users:
         row = {j: max(v, 0.0) for j, v in sat[i].items() if v > 0}
@@ -127,6 +135,70 @@ def eigentrust(
         if delta < tol:
             return t, it, reach_iter if reach_iter is not None else it
     return t, max_iter, reach_iter if reach_iter is not None else max_iter
+
+
+@dataclass
+class Selection:
+    trust: dict[str, float]                     # reputation across all topics
+    topic_trust: dict[str, dict[str, float]]    # topic -> member -> trust on that topic
+    top_k: dict[str, list[str]]                 # topic -> members whose models the topic agent aggregates
+    rounds: int
+    converged: bool
+
+
+def topic_scoped_trust(graph: TopicGraph, judgments: list[Judgment], prior: dict[str, float],
+                       alpha: float = 0.15) -> dict[str, dict[str, float]]:
+    """
+    Trust on each topic from that topic's judgments only, seeded by each
+    member's reputation across all topics. A model good elsewhere starts
+    with some say here, but only verdicts on this topic rank it here.
+    """
+    by_topic = defaultdict(list)
+    for j in judgments:
+        by_topic[j.topic].append(j)
+    return {t: eigentrust(graph.members_of(t), by_topic[t], pretrusted=prior, alpha=alpha)[0]
+            for t in graph.topics()}
+
+
+def select_top_k(graph: TopicGraph, topic_trust: dict[str, dict[str, float]], k: int) -> dict[str, list[str]]:
+    """
+    Each topic agent's pick: its k most-trusted members on that topic. Members tied with
+    the k-th are kept, since nothing separates them. Zero trust is no
+    evidence, so a member at zero is picked only if nobody on the topic
+    has any trust (e.g. a two-person topic with no third party to judge).
+    """
+    picks = {}
+    for topic in graph.topics():
+        trust = topic_trust[topic]
+        ranked = sorted(graph.members_of(topic), key=lambda u: (-trust.get(u, 0.0), u))
+        cutoff = trust.get(ranked[min(k, len(ranked)) - 1], 0.0)
+        if cutoff > 0:
+            picks[topic] = [u for u in ranked if trust.get(u, 0.0) >= cutoff]
+        else:
+            positive = [u for u in ranked if trust.get(u, 0.0) > 0]
+            picks[topic] = positive or ranked
+    return picks
+
+
+def emergent_selection(
+    graph: TopicGraph, judgments: list[Judgment], k: int = 1, max_rounds: int = 20, alpha: float = 0.15,
+) -> Selection:
+    """
+    Anchor-free bootstrap: reputation with no anchor -> topic-scoped trust
+    -> each agent's top-k -> reputation anchored on those picks -> new
+    picks, until the picks repeat.
+    """
+    users = graph.users()
+    anchors = None
+    for rnd in range(1, max_rounds + 1):
+        trust, _, _ = eigentrust(users, judgments, pretrusted=anchors, alpha=alpha)
+        topic_trust = topic_scoped_trust(graph, judgments, trust, alpha=alpha)
+        picks = select_top_k(graph, topic_trust, k)
+        new_anchors = sorted({u for us in picks.values() for u in us})
+        if new_anchors == anchors:
+            return Selection(trust, topic_trust, picks, rnd, True)
+        anchors = new_anchors
+    return Selection(trust, topic_trust, picks, max_rounds, False)
 
 
 def win_rate(users: list[str], judgments: list[Judgment]) -> dict[str, float]:

@@ -108,8 +108,8 @@ def arrival_order_values(
 
     This is a priority rule: whoever covers a cluster first gets all of
     its credit, and a later contributor covering the same cluster gets
-    none. It is what makes a topic's first arrival (its moderator) end
-    up with the largest share. Shapley deliberately removes that
+    none. It gives a topic's first arrival the largest share whether or
+    not anyone else would pick them. Shapley deliberately removes that
     advantage; compare the two on the same pool before choosing.
     """
     if order is None:

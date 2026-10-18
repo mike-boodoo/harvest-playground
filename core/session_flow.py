@@ -9,14 +9,19 @@ three different places:
   access     how far away each topic is (core/topic_graph.py). Exhaustive
              exploration gives everyone in a component the same topics,
              so distance decay is the only access difference.
-  stake      the user's ownership share of each topic agent
-             (core/valuation.py). Under the arrival-order rule the
-             moderator (first arrival) gets the largest share; under
-             Shapley, order doesn't matter.
-  quality    how good each topic agent is: members' models mixed by the
-             trust their peers give them (core/peer_benchmark.py), so the
-             benchmark that orders the models is derived from the models
-             themselves, not from a service.
+  stake      the user's ownership share of each topic agent. The main
+             rule follows the agent's own selection: members whose models
+             it aggregates own it in proportion to their trust. Arrival
+             order and Shapley (core/valuation.py) are kept to compare.
+  quality    how good each topic agent is: it aggregates only its top-k
+             members' models, picked and weighted by the trust their peers
+             give them (core/peer_benchmark.py), so the benchmark that
+             orders the models comes from the models, not a service.
+
+Nobody is designated a moderator. The top-k picks act as moderators in
+effect (they anchor the benchmark, shape the agent and hold the stake),
+and `infer_top_k` measures how quickly a member can work out who they
+are from the agent's answers.
 
 Models are simulated: each user's model has a hidden skill per topic.
 Batches are really signed and pooled, with a separate key per user per
@@ -29,7 +34,7 @@ import hashlib
 import random
 from dataclasses import dataclass
 
-from .peer_benchmark import eigentrust, peer_judgments
+from .peer_benchmark import Selection, emergent_selection, peer_judgments
 from .pool import CapturePool
 from .provenance import ProvenanceSigner
 from .target import GenerationResult, Target
@@ -141,22 +146,22 @@ def topic_shares(graph: TopicGraph, pools: dict[str, TopicPool], rule: str) -> d
 
 # ---- topic agents and takeaways --------------------------------------------
 
-def topic_agent_quality(graph: TopicGraph, skill: dict, weight: dict) -> dict[str, float]:
-    """
-    Each topic agent learns from all its members' models, mixed by `weight`:
-    either one score per user (peer-derived trust) or one per topic per user
-    (ownership shares, for comparison).
-    """
-    quality = {}
+def selection_shares(graph: TopicGraph, selection: Selection) -> dict[str, dict[str, float]]:
+    """Ownership of each topic agent: the members it aggregates, in proportion to their trust on it; everyone else 0."""
+    shares = {}
     for topic in graph.topics():
-        members = graph.members_of(topic)
-        w = weight[topic] if isinstance(weight.get(topic), dict) else weight
-        weights = {u: w.get(u, 0.0) for u in members}
+        picked = selection.top_k[topic]
+        weights = {u: selection.topic_trust[topic].get(u, 0.0) for u in picked}
         total = sum(weights.values())
-        if not total:
-            weights, total = {u: 1.0 for u in members}, len(members)
-        quality[topic] = sum(weights[u] * skill[u][topic] for u in members) / total
-    return quality
+        shares[topic] = {u: (weights[u] / total if total else 1 / len(picked)) if u in picked else 0.0
+                         for u in graph.members_of(topic)}
+    return shares
+
+
+def topic_agent_quality(graph: TopicGraph, skill: dict, shares: dict[str, dict[str, float]]) -> dict[str, float]:
+    """Each topic agent's quality: its members' skills mixed by the weight it gives each one."""
+    return {t: sum(w * skill[u][t] for u, w in shares[t].items()) / (sum(shares[t].values()) or 1)
+            for t in graph.topics()}
 
 
 @dataclass
@@ -165,11 +170,12 @@ class Takeaway:
     per_topic: dict[str, float]     # quality of the user's take-away model on each topic
     coverage: float                 # mean over every topic in the community
     stake: dict[str, float]         # rule -> sum of ownership shares across topic agents
-    moderates: list[str]
+    selected_on: list[str]          # topics whose agent aggregates this user's model
 
 
 def takeaway(graph: TopicGraph, exp: Exploration, skill: dict, agent_quality: dict,
-             shares_by_rule: dict[str, dict[str, dict[str, float]]], decay: float = 0.85) -> Takeaway:
+             shares_by_rule: dict[str, dict[str, dict[str, float]]], selection: Selection,
+             decay: float = 0.85) -> Takeaway:
     """
     The user's model learns from every topic agent it reached, discounted by
     `decay` per degree of separation, and never gets worse than it started.
@@ -183,7 +189,42 @@ def takeaway(graph: TopicGraph, exp: Exploration, skill: dict, agent_quality: di
         else:
             per_topic[topic] = own
     stake = {rule: sum(s.get(user, 0.0) for s in shares.values()) for rule, shares in shares_by_rule.items()}
-    return Takeaway(user, per_topic, sum(per_topic.values()) / len(per_topic), stake, graph.moderated_by(user))
+    selected_on = [t for t in graph.topics() if user in selection.top_k[t]]
+    return Takeaway(user, per_topic, sum(per_topic.values()) / len(per_topic), stake, selected_on)
+
+
+# ---- inferring the selection ------------------------------------------------
+
+def infer_top_k(graph: TopicGraph, skill: dict, selection: Selection, topic: str,
+                n_prompts: int, rng: random.Random, choices: int = 4) -> list[str]:
+    """
+    What a member can work out without being told. On each multiple-choice
+    prompt, every member's model answers (correct with probability equal to
+    its skill, otherwise a random wrong choice) and members see each
+    other's answers on a shared topic. The agent answers by sampling one
+    picked member's answer in proportion to its share. The observer ranks
+    members by how often the agent agrees with them and guesses the top
+    len(picks). Shared wrong answers are what give the picks away.
+    """
+    members = graph.members_of(topic)
+    shares = selection_shares(graph, selection)[topic]
+    picked = [u for u in members if shares[u] > 0]
+    agree = {u: 0 for u in members}
+    for _ in range(n_prompts):
+        answers = {u: 0 if rng.random() < skill[u][topic] else rng.randrange(1, choices) for u in members}
+        source = rng.choices(picked, weights=[shares[u] for u in picked])[0]
+        for u in members:
+            agree[u] += answers[u] == answers[source]
+    return sorted(sorted(members, key=lambda u: (-agree[u], u))[:len(picked)])
+
+
+def inference_accuracy(c: "Community", n_prompts: int, trials: int = 40, seed: int = 0) -> float:
+    """Share of (topic, trial) pairs where the observer's guess equals the agent's actual picks."""
+    rng = random.Random(seed)
+    topics = [t for t in c.graph.topics() if len(c.selection.top_k[t]) < len(c.graph.members_of(t))]
+    hits = sum(infer_top_k(c.graph, c.skill, c.selection, t, n_prompts, rng) == sorted(c.selection.top_k[t])
+               for t in topics for _ in range(trials))
+    return hits / (len(topics) * trials) if topics else 1.0
 
 
 @dataclass
@@ -200,29 +241,34 @@ class Community:
     skill: dict
     colluders: frozenset[str]
     pools: dict[str, TopicPool]
-    shares: dict[str, dict[str, dict[str, float]]]
-    trust: dict[str, float]
+    selection: Selection
+    shares: dict[str, dict[str, dict[str, float]]]    # rule -> topic -> user -> share
     agent_quality: dict[str, float]
 
+    @property
+    def trust(self) -> dict[str, float]:
+        return self.selection.trust
 
-def build_community(seed: int = 0) -> Community:
+
+def build_community(seed: int = 0, top_k: int = 2) -> Community:
     memberships, skill, colluders = demo_community()
     graph = TopicGraph(memberships)
     pools = build_topic_pools(graph)
-    shares = {rule: topic_shares(graph, pools, rule) for rule in ("arrival", "shapley")}
     judgments = peer_judgments(graph, skill, random.Random(seed), colluders=colluders)
-    moderators = sorted({graph.moderator(t) for t in graph.topics()})
-    trust, _, _ = eigentrust(graph.users(), judgments, pretrusted=moderators)
-    return Community(graph, skill, colluders, pools, shares, trust,
-                     topic_agent_quality(graph, skill, trust))
+    selection = emergent_selection(graph, judgments, k=top_k)
+    shares = {"selection": selection_shares(graph, selection)}
+    shares.update({rule: topic_shares(graph, pools, rule) for rule in ("arrival", "shapley")})
+    return Community(graph, skill, colluders, pools, selection, shares,
+                     topic_agent_quality(graph, skill, shares["selection"]))
 
 
 def run_session(c: Community, ego: str, k: int = 3, decay: float = 0.85) -> SessionReport:
+    """`k` is the anonymity threshold for naming topics on the ego's screen."""
     exp = c.graph.explore(ego)
     risk = reidentification_risk(c.graph, exp)
     return SessionReport(
         exploration=exp,
         views=visible_view(c.graph, exp, k=k),
         smallest_anonymity_set=min(risk.values()) if risk else None,
-        takeaway=takeaway(c.graph, exp, c.skill, c.agent_quality, c.shares, decay=decay),
+        takeaway=takeaway(c.graph, exp, c.skill, c.agent_quality, c.shares, c.selection, decay=decay),
     )

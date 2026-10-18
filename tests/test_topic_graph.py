@@ -26,10 +26,9 @@ def test_exhaustion_gives_a_component_the_same_reach():
     assert g.diameter() == 4
 
 
-def test_moderator_is_first_arrival():
+def test_first_arrival_and_arrival_order():
     g = chain()
-    assert g.moderator("y") == "b"
-    assert g.moderated_by("b") == ["y"]
+    assert g.first_arrival("y") == "b"
     assert g.members_of("w") == ["d", "e", "f"]
 
 
