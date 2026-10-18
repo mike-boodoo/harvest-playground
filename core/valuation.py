@@ -73,23 +73,52 @@ def shapley_values(
     for _ in range(n_permutations):
         order = contributors[:]
         rng.shuffle(order)
-
-        accumulated_prompts: list[str] = []
-        prev_utility = 0.0
-
-        for contributor in order:
-            accumulated_prompts = accumulated_prompts + prompts_by_contributor[contributor]
-            new_utility = utility_fn(accumulated_prompts, vocab)
-
-            # Marginal contribution = utility gained by this contributor
-            # joining the coalition that already includes everyone
-            # before them in this random ordering.
-            marginal_totals[contributor] += new_utility - prev_utility
-            prev_utility = new_utility
+        for contributor, marginal in _marginals(order, prompts_by_contributor, vocab, utility_fn).items():
+            marginal_totals[contributor] += marginal
 
     # Average marginal contribution across all sampled permutations
     # IS the Monte Carlo estimate of the Shapley value.
     return {c: marginal_totals[c] / n_permutations for c in contributors}
+
+
+def _marginals(order, prompts_by_contributor, vocab, utility_fn) -> dict[str, float]:
+    accumulated_prompts: list[str] = []
+    prev_utility = 0.0
+    marginals = {}
+    for contributor in order:
+        accumulated_prompts = accumulated_prompts + prompts_by_contributor[contributor]
+        new_utility = utility_fn(accumulated_prompts, vocab)
+        # Marginal contribution = utility gained by this contributor
+        # joining the coalition that already includes everyone
+        # before them in this ordering.
+        marginals[contributor] = new_utility - prev_utility
+        prev_utility = new_utility
+    return marginals
+
+
+def arrival_order_values(
+    pool: CapturePool,
+    vocab: list[str],
+    order: list[str] | None = None,
+    utility_fn=coverage_utility,
+) -> dict[str, float]:
+    """
+    Marginal contribution in the ONE order contributors actually arrived
+    (default: by batch created_at), instead of averaged over all orders.
+
+    This is a priority rule: whoever covers a cluster first gets all of
+    its credit, and a later contributor covering the same cluster gets
+    none. It gives a topic's first arrival the largest share whether or
+    not anyone else would pick them. Shapley deliberately removes that
+    advantage; compare the two on the same pool before choosing.
+    """
+    if order is None:
+        first_seen = {}
+        for c in sorted(pool.contributions, key=lambda c: c.created_at):
+            first_seen.setdefault(c.contributor_pubkey, c.created_at)
+        order = list(first_seen)
+    prompts_by_contributor = {c: pool.all_prompts_by(c) for c in order}
+    return _marginals(order, prompts_by_contributor, vocab, utility_fn)
 
 
 def ownership_shares(shapley_vals: dict[str, float]) -> dict[str, float]:
