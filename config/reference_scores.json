@@ -1,0 +1,36 @@
+{
+  "_note": "Published MMLU accuracies (percent) to compare a local run against. 'leaderboard' rows are copied from the MMLU authors' leaderboard (https://github.com/hendrycks/test#test-leaderboard) and include per-category scores. 'vendor' rows are overall scores as reported by each model's developer; their prompting setups differ (see 'setting'), so only 5-shot rows are like-for-like with this playground's default run. Verify vendor figures against the linked source before citing them. Add rows freely; any category left out is shown as blank.",
+  "models": [
+    {"name": "Chinchilla (70B)", "kind": "leaderboard", "setting": "few-shot", "source": "https://arxiv.org/abs/2203.15556",
+     "Humanities": 63.6, "Social Sciences": 79.3, "STEM": 54.9, "Other": 73.9, "Average": 67.5},
+    {"name": "Gopher (280B)", "kind": "leaderboard", "setting": "few-shot", "source": "https://arxiv.org/abs/2112.11446",
+     "Humanities": 56.2, "Social Sciences": 71.9, "STEM": 47.4, "Other": 66.1, "Average": 60.0},
+    {"name": "GPT-3 (175B, fine-tuned)", "kind": "leaderboard", "setting": "fine-tuned", "source": "https://arxiv.org/abs/2005.14165",
+     "Humanities": 52.5, "Social Sciences": 63.9, "STEM": 41.4, "Other": 57.9, "Average": 53.9},
+    {"name": "flan-T5-xl", "kind": "leaderboard", "setting": "few-shot", "source": "https://arxiv.org/abs/2210.11416",
+     "Humanities": 46.3, "Social Sciences": 57.7, "STEM": 39.0, "Other": 55.1, "Average": 49.3},
+    {"name": "UnifiedQA", "kind": "leaderboard", "setting": "fine-tuned", "source": "https://arxiv.org/abs/2005.00700",
+     "Humanities": 45.6, "Social Sciences": 56.6, "STEM": 40.2, "Other": 54.6, "Average": 48.9},
+    {"name": "GPT-3 (175B, few-shot)", "kind": "leaderboard", "setting": "few-shot", "source": "https://arxiv.org/abs/2005.14165",
+     "Humanities": 40.8, "Social Sciences": 50.4, "STEM": 36.7, "Other": 48.8, "Average": 43.9},
+    {"name": "GPT-3 (6.7B, fine-tuned)", "kind": "leaderboard", "setting": "fine-tuned", "source": "https://arxiv.org/abs/2005.14165",
+     "Humanities": 42.1, "Social Sciences": 49.2, "STEM": 35.1, "Other": 46.9, "Average": 43.2},
+    {"name": "flan-T5-large", "kind": "leaderboard", "setting": "few-shot", "source": "https://arxiv.org/abs/2210.11416",
+     "Humanities": 39.1, "Social Sciences": 49.1, "STEM": 33.2, "Other": 47.4, "Average": 41.9},
+    {"name": "flan-T5-base", "kind": "leaderboard", "setting": "few-shot", "source": "https://arxiv.org/abs/2210.11416",
+     "Humanities": 34.0, "Social Sciences": 38.1, "STEM": 27.6, "Other": 37.0, "Average": 34.2},
+    {"name": "GPT-2", "kind": "leaderboard", "setting": "few-shot", "source": "https://arxiv.org/abs/2005.14165",
+     "Humanities": 32.8, "Social Sciences": 33.3, "STEM": 30.2, "Other": 33.1, "Average": 32.4},
+    {"name": "flan-T5-small", "kind": "leaderboard", "setting": "few-shot", "source": "https://arxiv.org/abs/2210.11416",
+     "Humanities": 29.9, "Social Sciences": 30.9, "STEM": 27.5, "Other": 29.7, "Average": 29.5},
+    {"name": "Random baseline", "kind": "leaderboard", "setting": "-", "source": "https://github.com/hendrycks/test",
+     "Humanities": 25.0, "Social Sciences": 25.0, "STEM": 25.0, "Other": 25.0, "Average": 25.0},
+
+    {"name": "GPT-4", "kind": "vendor", "setting": "5-shot", "source": "https://arxiv.org/abs/2303.08774", "Average": 86.4},
+    {"name": "Claude 3 Opus", "kind": "vendor", "setting": "5-shot", "source": "https://www.anthropic.com/news/claude-3-family", "Average": 86.8},
+    {"name": "Claude 3.5 Sonnet", "kind": "vendor", "setting": "5-shot", "source": "https://www.anthropic.com/news/claude-3-5-sonnet", "Average": 88.7},
+    {"name": "Gemini 1.0 Ultra", "kind": "vendor", "setting": "5-shot", "source": "https://arxiv.org/abs/2312.11805", "Average": 83.7},
+    {"name": "GPT-4o", "kind": "vendor", "setting": "0-shot CoT", "source": "https://openai.com/index/hello-gpt-4o/", "Average": 88.7},
+    {"name": "Llama 3.1 405B Instruct", "kind": "vendor", "setting": "0-shot CoT", "source": "https://ai.meta.com/blog/meta-llama-3-1/", "Average": 88.6}
+  ]
+}
