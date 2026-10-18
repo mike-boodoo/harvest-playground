@@ -57,6 +57,9 @@ python cli.py distill --model ./llama-3.1-8b-instruct \
 python cli.py distill --model ./llama-3.1-8b-instruct \
     --topics @config/topics/mmlu.txt --n 100
 
+# Other topic sets in config/topics/: mmlu_pro.txt (13 broad domains),
+# programming_languages.txt (25 popular languages, from GitHub Linguist)
+
 # Synthetic eval generation against a self-hosted vLLM server
 python cli.py syntheval --backend openai_compat \
     --base-url http://localhost:8000 --model-id my-finetune \

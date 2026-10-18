@@ -1,0 +1,18 @@
+# The MMLU-Pro domains (Wang et al., "MMLU-Pro: A More Robust and Challenging
+# Multi-Task Language Understanding Benchmark"), from
+# https://github.com/TIGER-AI-Lab/MMLU-Pro (Apache License 2.0).
+# The catch-all "Others" domain is left out, since it isn't a usable topic.
+# One topic per line; use with --topics @config/topics/mmlu_pro.txt
+biology
+business
+chemistry
+computer science
+economics
+engineering
+health
+history
+law
+math
+philosophy
+physics
+psychology

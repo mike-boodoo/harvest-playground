@@ -1,0 +1,29 @@
+# GitHub Linguist's popular-languages list (the languages shown first in GitHub's
+# language dropdowns), from https://github.com/github-linguist/linguist/blob/main/lib/linguist/popular.yml
+# MIT License, Copyright (c) 2017 GitHub, Inc. One topic per line; use with
+# --topics @config/topics/programming_languages.txt
+C
+C#
+C++
+CoffeeScript
+CSS
+Dart
+DM
+Elixir
+Go
+Groovy
+HTML
+Java
+JavaScript
+Kotlin
+Objective-C
+Perl
+PHP
+PowerShell
+Python
+Ruby
+Rust
+Scala
+Shell
+Swift
+TypeScript
