@@ -1,0 +1,40 @@
+{
+  "batch": {
+    "model_id": "mock-open-model-7b",
+    "license_tag": "apache-2.0",
+    "strategy_name": "synth_eval",
+    "created_at": 1792332764.0726442,
+    "results": [
+      {
+        "prompt": "Contrast the textbook version of history with a real-world exception.",
+        "response": "[mock response to: Contrast the textbook version of history...]",
+        "content_hash": "1058d7d0a7b67fd5240cccc871523618fded52e3c9d95745dfcfdb70c958a6b9",
+        "latency_s": 0.001
+      },
+      {
+        "prompt": "What's an example of physics that most people get wrong?",
+        "response": "[mock response to: What's an example of physics that most p...]",
+        "content_hash": "84097ce8dd62395099a72799b4d65a08634358e294d95565f0e8ad3832ac188e",
+        "latency_s": 0.001
+      },
+      {
+        "prompt": "Contrast the textbook version of history with a real-world exception.",
+        "response": "[mock response to: Contrast the textbook version of history...]",
+        "content_hash": "1058d7d0a7b67fd5240cccc871523618fded52e3c9d95745dfcfdb70c958a6b9",
+        "latency_s": 0.001
+      }
+    ],
+    "batch_meta": {
+      "n_prompts": 3,
+      "strategy_config": {
+        "topics": [
+          "physics",
+          "history"
+        ],
+        "n_frames": 5
+      }
+    }
+  },
+  "signature_hex": "f494fa96b5fc9c19d6c3acf37ba10b31c1df183d789a895e6bafd79715e74be116ae9fe87c037e6e8e9c23b25ae10eece34498259bcbffb0ab2e87353c319d07",
+  "pubkey_hex": "12a1422d25a9cc76fce0e29b14f97de3800961d3c233bb137626146d143d6ad1"
+}

@@ -1,0 +1,8 @@
+accelerate>=1.15.0
+httpx>=0.28.1
+matplotlib>=3.11.2
+numpy>=2.5.3
+PyNaCl>=1.6.2
+PyYAML>=6.0.1
+torch>=2.14.1
+transformers>=5.20.1

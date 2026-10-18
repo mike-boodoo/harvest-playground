@@ -1,0 +1,28 @@
+{
+  "batch": {
+    "model_id": "mock-open-model-7b",
+    "license_tag": "apache-2.0",
+    "strategy_name": "fixed",
+    "created_at": 1792332770.6989422,
+    "results": [
+      {
+        "prompt": "login question one",
+        "response": "[response to: login question one]",
+        "content_hash": "e62ec6e3a12005e2ccb2bdf10c87aa253f54c7b91682fb5ca82c6625ce94ad7b",
+        "latency_s": 0.001
+      },
+      {
+        "prompt": "refund question one",
+        "response": "[response to: refund question one]",
+        "content_hash": "4b6c584d2b8cc670471dc283e53c6232e11029ff75512a35a01f9a1f464e062a",
+        "latency_s": 0.001
+      }
+    ],
+    "batch_meta": {
+      "n_prompts": 2,
+      "strategy_config": {}
+    }
+  },
+  "signature_hex": "f49cb7ba0b3b90db4effc3a91824163f428e4039563bdb43b05a3959ce1bc5537d948839c4215431da1d068df003d981faaad4dab8f6e48aa229868a4fa95a0d",
+  "pubkey_hex": "e0427e4c85ae7628e1e67d71ce7b0fece30beb7094c2d961026566a5015011af"
+}
