@@ -1,0 +1,58 @@
+{
+  "batch": {
+    "model_id": "mock-open-model-7b",
+    "license_tag": "apache-2.0",
+    "strategy_name": "distillation_coverage",
+    "created_at": 1792332764.0717812,
+    "results": [
+      {
+        "prompt": "Compare two approaches within coding.",
+        "response": "[mock response to: Compare two approaches within coding....]",
+        "content_hash": "bf3f9ab0170ab4cdc39f11e74d2ea873533739d36ba8236cda6e72bdf7cf33fa",
+        "latency_s": 0.001
+      },
+      {
+        "prompt": "Give a step-by-step walkthrough related to coding.",
+        "response": "[mock response to: Give a step-by-step walkthrough related ...]",
+        "content_hash": "a3b17e60ec48593162e6645b8ae7178c2fd90ccb3f0d26498beec66b5e1f7d64",
+        "latency_s": 0.001
+      },
+      {
+        "prompt": "What's a common misconception about coding?",
+        "response": "[mock response to: What's a common misconception about codi...]",
+        "content_hash": "ce7bcac9ae0c20188c886b03a170f90b9f781c6b40df683a88ced7f04d522c3c",
+        "latency_s": 0.001
+      },
+      {
+        "prompt": "Give a step-by-step walkthrough related to coding.",
+        "response": "[mock response to: Give a step-by-step walkthrough related ...]",
+        "content_hash": "a3b17e60ec48593162e6645b8ae7178c2fd90ccb3f0d26498beec66b5e1f7d64",
+        "latency_s": 0.001
+      },
+      {
+        "prompt": "Write a short example demonstrating writing.",
+        "response": "[mock response to: Write a short example demonstrating writ...]",
+        "content_hash": "6f3e1b0c785576b82226518effd02b5204d13eed57b63b5c926a8bfb85c9e047",
+        "latency_s": 0.001
+      }
+    ],
+    "batch_meta": {
+      "n_prompts": 5,
+      "strategy_config": {
+        "topics": [
+          "math",
+          "coding",
+          "writing"
+        ],
+        "n_templates": 5,
+        "length_bins": [
+          20,
+          60,
+          150
+        ]
+      }
+    }
+  },
+  "signature_hex": "8eabdf4abfa80e28d4b1bfc2291829df1d4c465a699221b7c745cd4ddfe18a8ff08dc72948e29cd616f6cfbd800c246144b27dadf2df18866c39901833680f0d",
+  "pubkey_hex": "12a1422d25a9cc76fce0e29b14f97de3800961d3c233bb137626146d143d6ad1"
+}
